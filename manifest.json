@@ -1,0 +1,16 @@
+{
+  "name": "Karma Kodehjelp - Karkirurgi",
+  "short_name": "Karma Kodehjelp",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f4ef",
+  "theme_color": "#f6f4ef",
+  "icons": [
+    {
+      "src": "./icon-180.jpg",
+      "sizes": "180x180",
+      "type": "image/jpeg"
+    }
+  ]
+}
