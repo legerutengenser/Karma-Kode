@@ -1,6 +1,6 @@
 {
-  "name": "Karma Kodehjelp - Karkirurgi",
-  "short_name": "Karma Kodehjelp",
+  "name": "Karma Kode - Karkirurgi",
+  "short_name": "Karma Kode",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
