@@ -834,7 +834,14 @@ footer.note {
     { pattern: /\btrombin\w*/i, expand: ["perkutan okklusjon av pseudoaneurisme, ultralydveiledet"], kodes: ["PYY92K"] },
     { pattern: /\b(injeksjon av trombin|trombininjeksjon)\b/i, expand: ["perkutan okklusjon av pseudoaneurisme, ultralydveiledet"], kodes: ["PYY92K"] },
     { pattern: /\b(sklerosering\w*|a?etox?ysklerol\w*|a?etoks?ysklerol\w*)\b/i, expand: ["skleroserende"], kodes: ["PHX10", "ZPA10", "ZPA15"] },
-    { pattern: /\bul\b/i, expand: ["ultralyd"] },
+    {
+      pattern: /\bul\b/i,
+      expand: ["ultralyd"],
+      kodes: [
+        "SPA0AK", "SPB0AK", "SPC0BK", "SPX0DK", "SPX0KK", "SPY0BK", "SPY0CK",
+        "PYY92K", "PYY90K",
+      ],
+    },
   ];
 
   // ---------------------------------------------------------------------
@@ -869,6 +876,16 @@ footer.note {
     { full: "femorodistal", minLen: 5, kodes: ["PFH2", "PFH99"] },
     // "perop"/"peroperativ" -> peroperative angiography (SXP0BB)
     { full: "peroperativ", minLen: 5, kodes: ["SXP0BB"] },
+    // "ult..."/"ultra..."/"ultralyd" -> ultrasound codes (same priority
+    // list as "UL"). minLen=3 avoids over-triggering on short words like
+    // "underekstremitet" while still anticipating from "ult".
+    {
+      full: "ultralyd", minLen: 3,
+      kodes: [
+        "SPA0AK", "SPB0AK", "SPC0BK", "SPX0DK", "SPX0KK", "SPY0BK", "SPY0CK",
+        "PYY92K", "PYY90K",
+      ],
+    },
   ];
 
   // ---------------------------------------------------------------------
@@ -1171,8 +1188,11 @@ footer.note {
         const idx = forceKodes.findIndex(p => entry.kode.startsWith(p));
         if (idx !== -1) {
           forcedMatch = true;
-          // earlier entries in forceKodes rank higher among forced matches
-          best = Math.max(best, 65 + (forceKodes.length - idx) * 0.5);
+          // earlier entries in forceKodes rank higher among forced matches;
+          // the bonus is large enough to dominate any text-based match score,
+          // with a wide gap so freq/arterial/forcedMatch bonuses (max ~50)
+          // can't reorder the intended sequence
+          best = Math.max(best, 1000 - idx * 10);
         }
       }
       // forced inclusion by text content (e.g. "av..." -> codes containing "fistel")
