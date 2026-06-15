@@ -2,7 +2,7 @@
 // Bump CACHE_VERSION every time index.html (or this file) changes.
 // On activation, all caches from previous versions are deleted automatically.
 
-const CACHE_VERSION = "v4";
+const CACHE_VERSION = "v8";
 const CACHE_NAME = "karma-kodehjelp-" + CACHE_VERSION;
 
 const ASSETS = [
