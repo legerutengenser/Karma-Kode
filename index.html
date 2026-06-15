@@ -744,7 +744,7 @@ footer.note {
   </footer>
 </div>
 
-<div id="statsOverlay" class="stats-overlay" hidden>
+<div id="statsOverlay" class="stats-overlay" style="display:none;">
   <div class="stats-modal">
     <div class="stats-modal-head">
       <span>Mest søkte ord (lagret lokalt på denne enheten)</span>
@@ -1433,17 +1433,17 @@ footer.note {
     statsBtn.addEventListener("click", (ev) => {
       ev.preventDefault();
       renderStats();
-      statsOverlay.hidden = false;
+      statsOverlay.style.display = "flex";
     });
   }
   if (statsCloseBtn && statsOverlay) {
     statsCloseBtn.addEventListener("click", () => {
-      statsOverlay.hidden = true;
+      statsOverlay.style.display = "none";
     });
   }
   if (statsOverlay) {
     statsOverlay.addEventListener("click", (ev) => {
-      if (ev.target === statsOverlay) statsOverlay.hidden = true;
+      if (ev.target === statsOverlay) statsOverlay.style.display = "none";
     });
   }
 
