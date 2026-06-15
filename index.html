@@ -830,10 +830,10 @@ footer.note {
     { pattern: /\bdialyse\w*/i, expand: ["arteriovenøs fistel", "shunt"] },
     { pattern: /\bangio.?jet\b/i, expand: ["endovaskulær trombektomi"], strong2: "endovaskulær trombektomi" },
     { pattern: /\bpenumbra\b/i, expand: ["endovaskulær trombektomi"], strong2: "endovaskulær trombektomi" },
-    { pattern: /\baortaballong\w*/i, expand: ["midlertidig okklusjonsballong"], kodes: ["PDY20B"] },
-    { pattern: /\btrombin\w*/i, expand: ["perkutan okklusjon av aneurisme, ultralydveiledet"], kodes: ["PYY90K"] },
-    { pattern: /\b(injeksjon av trombin|trombininjeksjon)\b/i, expand: ["perkutan okklusjon av aneurisme, ultralydveiledet"], kodes: ["PYY90K"] },
-    { pattern: /\b(sklerosering\w*|a?etox?ysklerol\w*|a?etoks?ysklerol\w*)\b/i, expand: ["skleroserende"], kodes: ["ZPA10", "ZPA15"] },
+    { pattern: /\b(aortaballong\w*|reboa)\b/i, expand: ["midlertidig okklusjonsballong"], kodes: ["PDY20B"] },
+    { pattern: /\btrombin\w*/i, expand: ["perkutan okklusjon av pseudoaneurisme, ultralydveiledet"], kodes: ["PYY92K"] },
+    { pattern: /\b(injeksjon av trombin|trombininjeksjon)\b/i, expand: ["perkutan okklusjon av pseudoaneurisme, ultralydveiledet"], kodes: ["PYY92K"] },
+    { pattern: /\b(sklerosering\w*|a?etox?ysklerol\w*|a?etoks?ysklerol\w*)\b/i, expand: ["skleroserende"], kodes: ["PHX10", "ZPA10", "ZPA15"] },
     { pattern: /\bul\b/i, expand: ["ultralyd"] },
   ];
 
@@ -1167,9 +1167,13 @@ footer.note {
 
       // forced inclusion by code prefix (e.g. "aneurisme e..." -> PEG/PFG/PBG)
       let forcedMatch = false;
-      if (forceKodes && forceKodes.some(p => entry.kode.startsWith(p))) {
-        forcedMatch = true;
-        best = Math.max(best, 65);
+      if (forceKodes) {
+        const idx = forceKodes.findIndex(p => entry.kode.startsWith(p));
+        if (idx !== -1) {
+          forcedMatch = true;
+          // earlier entries in forceKodes rank higher among forced matches
+          best = Math.max(best, 65 + (forceKodes.length - idx) * 0.5);
+        }
       }
       // forced inclusion by text content (e.g. "av..." -> codes containing "fistel")
       if (forceTextContains && norm(entry.tekst).includes(norm(forceTextContains))) {
