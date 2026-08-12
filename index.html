@@ -732,10 +732,11 @@ footer.note {
     { text: "Baba jeg er ikke et fyrtårn, jeg har bare diskolys på", author: "Karpe" },
   ];
 
-  // Sitatrotasjon: bytter én gang per dag, og velger hver gang sitatet det
-  // er lengst tid siden ble vist (i stedet for en fast dag-i-året-rekkefølge).
-  // Historikk (sist vist-dato per sitatindeks) lagres i localStorage, slik at
-  // valget er stabilt gjennom dagen og reproduserbart offline.
+  // Sitatrotasjon: velger et nytt sitat hver gang siden lastes (f.eks. ved
+  // oppdatering av nettleseren), i stedet for å låse samme sitat gjennom
+  // hele dagen. Sitatet velges tilfeldig blant alle unntatt det som ble
+  // vist sist, slik at det ikke gjentas rett etter seg selv. Historikk
+  // lagres i localStorage, slik at valget er reproduserbart offline.
   const QUOTE_HISTORY_KEY = "karkode_quote_history_v1";
 
   function loadQuoteHistory() {
@@ -755,38 +756,22 @@ footer.note {
     }
   }
 
-  function todayKey() {
-    const now = new Date();
-    return now.getFullYear() + "-" + (now.getMonth() + 1) + "-" + now.getDate();
-  }
-
   function getDailyQuote() {
     if (!QUOTES.length) return null;
+    if (QUOTES.length === 1) return QUOTES[0];
 
     const history = loadQuoteHistory();
-    const today = todayKey();
+    const previousIdx = typeof history.lastIndex === "number" ? history.lastIndex : -1;
 
-    // Allerede valgt sitat for i dag? Bruk samme resten av dagen.
-    if (history.selectedFor === today && typeof history.selectedIndex === "number" &&
-        history.selectedIndex >= 0 && history.selectedIndex < QUOTES.length) {
-      return QUOTES[history.selectedIndex];
-    }
-
-    // Finn sitatet med lengst tid (evt. aldri vist -> høyest prioritet) siden sist vist.
-    const lastShown = history.lastShown || {};
-    let chosenIdx = 0;
-    let oldestTime = Infinity;
+    // Ikke vis samme sitat to ganger på rad: ekskluder forrige indeks,
+    // og velg tilfeldig blant resten.
+    const candidates = [];
     QUOTES.forEach((_, idx) => {
-      const t = lastShown[idx];
-      const time = typeof t === "number" ? t : -1; // aldri vist = eldst mulig
-      if (time < oldestTime) {
-        oldestTime = time;
-        chosenIdx = idx;
-      }
+      if (idx !== previousIdx) candidates.push(idx);
     });
 
-    lastShown[chosenIdx] = Date.now();
-    saveQuoteHistory({ selectedFor: today, selectedIndex: chosenIdx, lastShown });
+    const chosenIdx = candidates[Math.floor(Math.random() * candidates.length)];
+    saveQuoteHistory({ lastIndex: chosenIdx });
     return QUOTES[chosenIdx];
   }
 
