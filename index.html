@@ -854,7 +854,9 @@ footer.note {
     // "femorodistal" -> bypass to crural/distal arteries (PFH20-29, PFH99)
     { full: "femorodistal", minLen: 5, kodes: ["PFH2", "PFH99"] },
     // "perop"/"peroperativ" -> peroperative angiography (SXP0BB)
-    { full: "peroperativ", minLen: 5, kodes: ["SXP0BB"] },
+    { full: "peroperativ", minLen: 2, kodes: ["SXP0BB"] },
+    // "angio" -> peroperative angiography should be the top suggestion
+    { full: "angio", minLen: 5, kodes: ["SXP0BB"] },
     // "bekken" -> anticipate iliaca/iliakal codes as soon as "bekk..." is typed.
     { full: "bekken", minLen: 3, kodes: null, textContains: "ilia" },
     // "bekkenstent" -> once past "bekken" itself, anticipate iliac stent codes.
@@ -864,6 +866,11 @@ footer.note {
     { full: "tunnelert dialysekateter", minLen: 4, kodes: ["PHGX00"] },
     { full: "tunellert dialysekateter", minLen: 4, kodes: ["PHGX00"] },
     { full: "tunnellert dialysekateter", minLen: 4, kodes: ["PHGX00"] },
+    // "dialyse"/"dialysekateter" -> the AV-fistel/shunt synonym expansion
+    // (below) otherwise outranks the dialysis catheter codes because of
+    // their much higher NorKar frequency. Force the catheter codes to the
+    // top once the user has typed "dialyse" or further.
+    { full: "dialysekateter", minLen: 7, kodes: ["PHGX00", "PHGX05"] },
     // "ult..."/"ultra..."/"ultralyd" -> ultrasound codes (same priority
     // list as "UL"). minLen=3 avoids over-triggering on short words like
     // "underekstremitet" while still anticipating from "ult".
