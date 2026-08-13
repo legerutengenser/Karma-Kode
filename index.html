@@ -881,6 +881,35 @@ footer.note {
         "PYY92K", "PYY90K",
       ],
     },
+    // ---------------------------------------------------------------------
+    // Endovenøs varicebehandling: "endovenøs", "ablasjon", "varice(r)" or
+    // "åreknuter" (anticipated from a prefix of each) show this fixed set
+    // of codes in this order, with the remaining PHV-codes listed last.
+    // A more specific word (magna/parva/ventral lårgren/ekstirpasjoner/
+    // sklerosering/skum) reorders the same set so its own code leads.
+    // ---------------------------------------------------------------------
+    { full: "magna", minLen: 3,
+      kodes: ["PHV10X", "PHV99X", "PHV12X", "PHD99", "PHX10", "PHV11X", "PHV13X", "PHV14X"] },
+    { full: "parva", minLen: 3,
+      kodes: ["PHV12X", "PHV10X", "PHV99X", "PHD99", "PHX10", "PHV11X", "PHV13X", "PHV14X"] },
+    { full: "ventral largren", minLen: 3,
+      kodes: ["PHV99X", "PHV10X", "PHV12X", "PHD99", "PHX10", "PHV11X", "PHV13X", "PHV14X"] },
+    { full: "lokale ekstirpasjoner", minLen: 3,
+      kodes: ["PHD99", "PHV10X", "PHV99X", "PHV12X", "PHX10", "PHV11X", "PHV13X", "PHV14X"] },
+    { full: "ekstirpasjoner", minLen: 3,
+      kodes: ["PHD99", "PHV10X", "PHV99X", "PHV12X", "PHX10", "PHV11X", "PHV13X", "PHV14X"] },
+    { full: "sklerosering", minLen: 3,
+      kodes: ["PHX10", "PHV10X", "PHV99X", "PHV12X", "PHD99", "PHV11X", "PHV13X", "PHV14X"] },
+    { full: "skum", minLen: 3,
+      kodes: ["PHX10", "PHV10X", "PHV99X", "PHV12X", "PHD99", "PHV11X", "PHV13X", "PHV14X"] },
+    { full: "endovenos", minLen: 3,
+      kodes: ["PHV10X", "PHV99X", "PHV12X", "PHD99", "PHX10", "PHV11X", "PHV13X", "PHV14X"] },
+    { full: "ablasjon", minLen: 3,
+      kodes: ["PHV10X", "PHV99X", "PHV12X", "PHD99", "PHX10", "PHV11X", "PHV13X", "PHV14X"] },
+    { full: "varicer", minLen: 3,
+      kodes: ["PHV10X", "PHV99X", "PHV12X", "PHD99", "PHX10", "PHV11X", "PHV13X", "PHV14X"] },
+    { full: "areknuter", minLen: 3,
+      kodes: ["PHV10X", "PHV99X", "PHV12X", "PHD99", "PHX10", "PHV11X", "PHV13X", "PHV14X"] },
   ];
 
   // ---------------------------------------------------------------------
