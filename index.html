@@ -817,7 +817,8 @@ footer.note {
     { pattern: /\bvap\b/i, expand: ["implantasjon av vaskulær injeksjonsport", "fjerning av vaskulær injeksjonsport"], kodes: ["PHX30", "PHX35"] },
     { pattern: /\bhd.?kateter\w*/i, expand: ["innlegging eller bytte av tunnelert dialysekateter"], kodes: ["PHGX00"] },
     { pattern: /\btun{1,2}el{1,2}ert\s+dialysekateter\w*/i, expand: ["innlegging eller bytte av tunnelert dialysekateter"], kodes: ["PHGX00"] },
-    { pattern: /\bhickman+\b/i, expand: ["innlegging av tunnelert venekateter"], kodes: ["PHX21", "PHX16", "PHX26"] },
+    // Hickman incl. misspellings (Hikman, Hickmann, Hikmann): PHX16, PHX21, PHX26 in that order
+    { pattern: /\bhi(?:ck|k)man{1,2}\b/i, expand: ["innlegging av tunnelert venekateter"], kodes: ["PHX16", "PHX21", "PHX26"] },
     { pattern: /\biliac\s*branch\b/i, expand: ["stentgraft", "iliaca"], kodes: ["PDZ15B", "PDZ31B"] },
     { pattern: /\beksplantasjon\w*/i, expand: ["fjerning av stent fra bypass"], kodes: ["PDU85"] },
     { pattern: /\breop\w*/i, expand: ["reoperasjon"] },
@@ -932,6 +933,15 @@ footer.note {
       kodes: ["PHV10X", "PHV99X", "PHV12X", "PHD99", "PHX10", "PHV11X", "PHV13X", "PHV14X"] },
     { full: "areknuter", minLen: 3,
       kodes: ["PHV10X", "PHV99X", "PHV12X", "PHD99", "PHX10", "PHV11X", "PHV13X", "PHV14X"] },
+    // Radiofrekvensablasjon = same endovenous set as "ablasjon". Anticipated
+    // from "radio" (5 chars) so "radialis"/"radi.." is not caught.
+    { full: "radiofrekvensablasjon", minLen: 5,
+      kodes: ["PHV10X", "PHV99X", "PHV12X", "PHD99", "PHX10", "PHV11X", "PHV13X", "PHV14X"] },
+    // Hickman anticipation (from 4 chars) incl. misspellings
+    { full: "hickman", minLen: 4, strict: true, kodes: ["PHX16", "PHX21", "PHX26"] },
+    { full: "hickmann", minLen: 4, strict: true, kodes: ["PHX16", "PHX21", "PHX26"] },
+    { full: "hikman", minLen: 4, strict: true, kodes: ["PHX16", "PHX21", "PHX26"] },
+    { full: "hikmann", minLen: 4, strict: true, kodes: ["PHX16", "PHX21", "PHX26"] },
     // Vakuumassistert sårbehandling: "vakuum"/"vacuum" (anticipated from
     // "vak"/"vac") shows WLGX20 first.
     { full: "vakuum", minLen: 3, kodes: ["WLGX20"] },
