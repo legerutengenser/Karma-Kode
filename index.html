@@ -637,6 +637,8 @@ footer.note {
     background: inherit;
   }
 }
+.more-btn { display:block; width:100%; margin:10px 0 4px; padding:10px 12px; border:1px solid var(--line, #d8d4c8); border-radius:8px; background:transparent; color:inherit; font:inherit; cursor:pointer; }
+.more-btn:hover { background: rgba(0,0,0,.04); }
 </style>
 </head>
 <body>
@@ -679,7 +681,7 @@ footer.note {
   </div>
 
   <footer class="note">
-    Frekvens hentet fra NORKAR-register 2006–2026 · vektingen for søkeordbruk lagres lokalt i nettleseren din
+    Frekvens hentet fra NORKAR-register 2006–2026 · vektingen for søkeordbruk lagres lokalt i nettleseren din · søkeord (ikke personopplysninger) registreres anonymt for å forbedre søket
   </footer>
 </div>
 
@@ -1312,7 +1314,7 @@ footer.note {
     }
 
     results.sort((a, b) => b.score - a.score);
-    return results.slice(0, 40);
+    return results;
   }
 
   // ---------------------------------------------------------------------
@@ -1350,9 +1352,13 @@ footer.note {
 
   let currentQuery = "";
   let selectedKode = null;
+  const PAGE_SIZE = 40;      // hits shown at first
+  const MORE_STEP = 100;     // extra hits per click on "Vis flere"
+  let shownLimit = PAGE_SIZE;
 
   function renderResults(query) {
-    const results = search(query);
+    const allResults = search(query);
+    const results = allResults.slice(0, shownLimit);
 
     if (!query.trim()) {
       const quote = getDailyQuote();
@@ -1366,7 +1372,7 @@ footer.note {
       return;
     }
 
-    if (results.length === 0) {
+    if (allResults.length === 0) {
       resultsEl.innerHTML = `<div class="empty-state">
         <div class="big">Ingen treff</div>
         Prøv et annet søkeord eller kode.
@@ -1377,7 +1383,7 @@ footer.note {
       return;
     }
 
-    countEl.textContent = results.length + (results.length === 40 ? "+ treff" : " treff");
+    countEl.textContent = allResults.length + " treff" + (allResults.length > results.length ? " (viser " + results.length + ")" : "");
     panelHeadInfo.textContent = "klikk for å vise i tre / merke som ønsket";
 
     resultsEl.innerHTML = results.map(r => {
@@ -1393,7 +1399,17 @@ footer.note {
         </div>
         <div class="r-badges">${boostBadge}</div>
       </div>`;
-    }).join("");
+    }).join("") + (allResults.length > results.length
+      ? `<button type="button" class="more-btn" id="moreBtn">Vis flere (${allResults.length - results.length} igjen)</button>`
+      : "");
+
+    const moreBtn = document.getElementById("moreBtn");
+    if (moreBtn) {
+      moreBtn.addEventListener("click", () => {
+        shownLimit += MORE_STEP;
+        renderResults(query);
+      });
+    }
 
     // attach handlers
     resultsEl.querySelectorAll(".result-row").forEach(row => {
@@ -1530,10 +1546,26 @@ footer.note {
   // ---------------------------------------------------------------------
   // Wire up
   // ---------------------------------------------------------------------
+  // Anonymous search-term statistics (GoatCounter). Sent only after the user
+  // has stopped typing (800 ms), only for terms of >= 3 characters, trimmed to
+  // 40 characters, and never the same term twice in a row. No user id is sent.
+  let lastSentSearch = "";
+  function sendSearchToGoatCounter(query) {
+    const q = (query || "").trim().toLowerCase().replace(/\s+/g, " ").slice(0, 40);
+    if (q.length < 3 || q === lastSentSearch) return;
+    lastSentSearch = q;
+    try {
+      if (window.goatcounter && typeof window.goatcounter.count === "function") {
+        window.goatcounter.count({ path: "sok/" + q, title: q, event: true });
+      }
+    } catch (err) { /* statistics must never break the app */ }
+  }
+
   let searchLogTimer = null;
   input.addEventListener("input", (e) => {
     currentQuery = e.target.value;
     selectedKode = null;
+    shownLimit = PAGE_SIZE;
     renderResults(currentQuery);
 
     // Debounce logging so we record the query the user settled on, not
@@ -1542,6 +1574,7 @@ footer.note {
     const queryToLog = currentQuery;
     searchLogTimer = setTimeout(() => {
       recordSearchQuery(queryToLog);
+      sendSearchToGoatCounter(queryToLog);
     }, 800);
   });
 
