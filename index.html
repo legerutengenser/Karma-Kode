@@ -1169,6 +1169,7 @@ footer.note {
     if (!q) return [];
 
     const { terms, strongPhrase, splitWords, forceKodes, forceTextContains, forceStep } = buildSearchTerms(q);
+    const stentgraftOnly = norm(q).includes("stentgraft");
 
     // Multi-word AND matching: if the query consists of 2+ significant words
     // (e.g. "aorta aneurisme"), or a synonym rule splits a compound word
@@ -1263,6 +1264,10 @@ footer.note {
         forcedMatch = true;
         best = Math.max(best, 65);
       }
+
+      // Whole word "stentgraft" typed: show ONLY codes whose text contains
+      // "stentgraft" (not plain stent codes). Bare "stent" is unaffected.
+      if (stentgraftOnly && !norm(entry.tekst).includes("stentgraft")) continue;
 
       if (best <= 0) continue;
 
