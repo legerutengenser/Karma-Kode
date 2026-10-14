@@ -942,6 +942,9 @@ footer.note {
     { full: "hickmann", minLen: 4, strict: true, kodes: ["PHX16", "PHX21", "PHX26"] },
     { full: "hikman", minLen: 4, strict: true, kodes: ["PHX16", "PHX21", "PHX26"] },
     { full: "hikmann", minLen: 4, strict: true, kodes: ["PHX16", "PHX21", "PHX26"] },
+    // "emb.." anticipates embolektomi (not embolisering): codes whose text
+    // contains "embolektomi" get a score bonus while the query is a prefix of it.
+    { full: "embolektomi", minLen: 3, textBonus: "embolektomi" },
     // Vakuumassistert sårbehandling: "vakuum"/"vacuum" (anticipated from
     // "vak"/"vac") shows WLGX20 first.
     { full: "vakuum", minLen: 3, kodes: ["WLGX20"] },
@@ -1127,6 +1130,7 @@ footer.note {
     let forceKodes = null;
     let forceTextContains = null;
     let forceStep = 10; // 100 = strict order (frequency cannot reorder)
+    let textBonus = null; // phrase whose entries get a score bonus
 
     // Short-prefix anticipation: "p" or "pt" -> anticipate "PTA"
     const qTrim = query.trim().toLowerCase();
@@ -1168,19 +1172,20 @@ footer.note {
         if (matchesForward || matchesReverse || matchesCompound) {
           if (rule.kodes) { forceKodes = rule.kodes; forceStep = rule.strict ? 100 : 10; }
           if (rule.textContains) forceTextContains = rule.textContains;
+          if (rule.textBonus) textBonus = rule.textBonus;
           break;
         }
       }
     }
 
-    return { terms, strongPhrase, splitWords, forceKodes, forceTextContains, forceStep };
+    return { terms, strongPhrase, splitWords, forceKodes, forceTextContains, forceStep, textBonus };
   }
 
   function search(query) {
     const q = query.trim();
     if (!q) return [];
 
-    const { terms, strongPhrase, splitWords, forceKodes, forceTextContains, forceStep } = buildSearchTerms(q);
+    const { terms, strongPhrase, splitWords, forceKodes, forceTextContains, forceStep, textBonus } = buildSearchTerms(q);
     const stentgraftOnly = norm(q).includes("stentgraft");
 
     // Multi-word AND matching: if the query consists of 2+ significant words
@@ -1305,6 +1310,8 @@ footer.note {
       }
 
       let score = best;
+
+      if (textBonus && norm(entry.tekst).includes(norm(textBonus))) score += 40;
 
       // extra bonus for matching all words of a multi-word query
       if (allWordsMatch) score += 15;
