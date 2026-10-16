@@ -839,6 +839,8 @@ footer.note {
   // "alias" terms are added to the search-text pool for that query.
   const SYNONYMS = [
     { pattern: /\bpta\b/i, expand: ["perkutan angioplastikk"] },
+    // AFS = a. femoralis superficialis
+    { pattern: /\bafs\b/i, expand: ["femoralis superficialis"], strong2: "femoralis superficialis" },
     { pattern: /\bblokk\w*/i, expand: ["perkutan angioplastikk"] },
     { pattern: /\b(coiling|coil|plugging|plugg\w*)\b/i, expand: ["perkutan okklusjon"] },
     { pattern: /\btea\b/i, expand: ["trombendarterektomi"], strong: true },
