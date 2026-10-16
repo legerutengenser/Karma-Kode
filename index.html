@@ -841,6 +841,13 @@ footer.note {
     { pattern: /\bpta\b/i, expand: ["perkutan angioplastikk"] },
     // AFS = a. femoralis superficialis
     { pattern: /\bafs\b/i, expand: ["femoralis superficialis"], strong2: "femoralis superficialis" },
+    // Arterial abbreviations
+    { pattern: /\bafc\b/i, expand: ["femoralis communis"], strong2: "femoralis communis" },
+    { pattern: /\b(ams|sma)\b/i, expand: ["mesenterica superior"], strong2: "mesenterica superior" },
+    { pattern: /\b(ami|ima)\b/i, expand: ["mesenterica inferior"], strong2: "mesenterica inferior" },
+    { pattern: /\baic\b/i, expand: ["iliaca communis"], strong2: "iliaca communis" },
+    // CEA = TEA of the carotid (interna first)
+    { pattern: /\bcea\b/i, kodes: ["PAF21", "PAF20", "PAF22"] },
     { pattern: /\bblokk\w*/i, expand: ["perkutan angioplastikk"] },
     { pattern: /\b(coiling|coil|plugging|plugg\w*)\b/i, expand: ["perkutan okklusjon"] },
     { pattern: /\btea\b/i, expand: ["trombendarterektomi"], strong: true },
@@ -1123,7 +1130,8 @@ footer.note {
     return (s || "")
       .toLowerCase()
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // strip accents for matching leniency
-      .replace(/æ/g, "ae").replace(/ø/g, "o").replace(/å/g, "a");
+      .replace(/æ/g, "ae").replace(/ø/g, "o").replace(/å/g, "a")
+      .replace(/extern/g, "ekstern"); // "externa" and "eksterna" are the same word
   }
 
   // returns {score, matchedText} for a single needle against haystack
@@ -1375,7 +1383,13 @@ footer.note {
     const { terms, splitWords } = buildSearchTerms(query);
     let html = escapeHtml(text);
     const allTerms = splitWords ? terms.concat(splitWords) : terms;
-    const uniqueTerms = [...new Set(allTerms.map(t => t.trim()).filter(Boolean))]
+    const withVariants = [];
+    for (const t of allTerms) {
+      withVariants.push(t);
+      if (/extern/i.test(t)) withVariants.push(t.replace(/extern/ig, "ekstern"));
+      if (/ekstern/i.test(t)) withVariants.push(t.replace(/ekstern/ig, "extern"));
+    }
+    const uniqueTerms = [...new Set(withVariants.map(t => t.trim()).filter(Boolean))]
       .sort((a, b) => b.length - a.length);
     for (const term of uniqueTerms) {
       const re = new RegExp("(" + escapeRe(term) + ")", "ig");
