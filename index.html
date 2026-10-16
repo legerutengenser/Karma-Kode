@@ -639,6 +639,20 @@ footer.note {
 }
 .more-btn { display:block; width:100%; margin:10px 0 4px; padding:10px 12px; border:1px solid var(--line, #d8d4c8); border-radius:8px; background:transparent; color:inherit; font:inherit; cursor:pointer; }
 .more-btn:hover { background: rgba(0,0,0,.04); }
+.fb-overlay { position:fixed; inset:0; background:rgba(29,43,39,.45); display:none; align-items:center; justify-content:center; padding:16px; z-index:50; }
+.fb-overlay.open { display:flex; }
+.fb-box { background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:18px; width:100%; max-width:460px; box-shadow:0 10px 30px rgba(0,0,0,.25); }
+.fb-box h2 { margin:0 0 6px; font-family:var(--serif); font-size:18px; }
+.fb-box p { margin:0 0 10px; font-size:13px; color:var(--ink-soft); line-height:1.4; }
+.fb-box textarea { width:100%; box-sizing:border-box; min-height:110px; resize:vertical; padding:10px; border:1px solid var(--line); border-radius:6px; font:inherit; font-size:14px; background:var(--bg); color:var(--ink); }
+.fb-row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; }
+.fb-count { font-family:var(--mono); font-size:11px; color:var(--ink-soft); }
+.fb-actions { display:flex; gap:8px; }
+.fb-actions button { font:inherit; font-size:13px; padding:7px 14px; border-radius:4px; border:1px solid var(--ink); background:transparent; color:var(--ink); cursor:pointer; }
+.fb-actions button.primary { background:var(--ink); color:#fff; }
+.fb-actions button:disabled { opacity:.45; cursor:default; }
+.fb-status { margin-top:10px; font-size:13px; min-height:1em; }
+.fb-alt { margin-top:8px; font-size:12px; color:var(--ink-soft); }
 </style>
 </head>
 <body>
@@ -680,8 +694,25 @@ footer.note {
     </div>
   </div>
 
+  <div class="fb-overlay" id="fbOverlay" role="dialog" aria-modal="true" aria-labelledby="fbTitle">
+    <div class="fb-box">
+      <h2 id="fbTitle">Forslag og tilbakemelding</h2>
+      <p>Skriv gjerne hva du savner eller ønsker (f.eks. nye søkeord eller koder). Meldingen sendes anonymt, og du får ikke svar. <strong>Ikke skriv pasientopplysninger eller personlige opplysninger.</strong></p>
+      <textarea id="fbText" maxlength="280" placeholder="Ditt forslag…"></textarea>
+      <div class="fb-row">
+        <span class="fb-count" id="fbCount">0 / 280</span>
+        <span class="fb-actions">
+          <button type="button" id="fbCancel">Lukk</button>
+          <button type="button" class="primary" id="fbSend" disabled>Send</button>
+        </span>
+      </div>
+      <div class="fb-status" id="fbStatus" aria-live="polite"></div>
+      <div class="fb-alt">Kan du åpne Google Forms? <a id="fbGoogle" href="https://docs.google.com/forms/d/1icbXZivot9tzJ_Uu4iCoJm72bssw5JNjgCzuDbdgYyE/viewform" target="_blank" rel="noopener">Bruk skjemaet her</a> i stedet.</div>
+    </div>
+  </div>
+
   <footer class="note">
-    Frekvens hentet fra NORKAR-register 2006–2026 · vektingen for søkeordbruk lagres lokalt i nettleseren din · søkeord (ikke personopplysninger) registreres anonymt for å forbedre søket
+    Frekvens hentet fra NORKAR-register 2006–2026 · vektingen for søkeordbruk lagres lokalt i nettleseren din · søkeord og forslag (ikke personopplysninger) registreres anonymt for å forbedre søket
   </footer>
 </div>
 
@@ -1578,6 +1609,21 @@ footer.note {
     } catch (err) { /* statistics must never break the app */ }
   }
 
+  // Searches with zero hits are logged as a separate event ("ingen-treff/..."),
+  // so you can see what people look for without finding it.
+  let lastSentNoHit = "";
+  function sendNoHitToGoatCounter(query) {
+    const q = (query || "").trim().toLowerCase().replace(/\s+/g, " ").slice(0, 40);
+    if (q.length < 3 || q === lastSentNoHit) return;
+    try {
+      if (search(query).length !== 0) return;
+      lastSentNoHit = q;
+      if (window.goatcounter && typeof window.goatcounter.count === "function") {
+        window.goatcounter.count({ path: "ingen-treff/" + q, title: q, event: true });
+      }
+    } catch (err) { /* statistics must never break the app */ }
+  }
+
   let searchLogTimer = null;
   input.addEventListener("input", (e) => {
     currentQuery = e.target.value;
@@ -1592,6 +1638,7 @@ footer.note {
     searchLogTimer = setTimeout(() => {
       recordSearchQuery(queryToLog);
       sendSearchToGoatCounter(queryToLog);
+      sendNoHitToGoatCounter(queryToLog);
     }, 800);
   });
 
@@ -1599,13 +1646,52 @@ footer.note {
   // including the current search query as context (if any), pre-filled
   // into the Google Form (if it has a matching text field).
   const feedbackBtn = document.getElementById("feedbackBtn");
+  const fbOverlay = document.getElementById("fbOverlay");
+  const fbText = document.getElementById("fbText");
+  const fbCount = document.getElementById("fbCount");
+  const fbSend = document.getElementById("fbSend");
+  const fbCancel = document.getElementById("fbCancel");
+  const fbStatus = document.getElementById("fbStatus");
+  let fbLastSent = 0;
+
+  function fbOpen() {
+    fbOverlay.classList.add("open");
+    fbStatus.textContent = "";
+    fbText.focus();
+  }
+  function fbClose() { fbOverlay.classList.remove("open"); }
+  function fbUpdate() {
+    const n = fbText.value.trim().length;
+    fbCount.textContent = fbText.value.length + " / 280";
+    fbSend.disabled = n < 5;
+  }
   if (feedbackBtn) {
-    feedbackBtn.addEventListener("click", (ev) => {
-      ev.preventDefault();
-      const formId = "1icbXZivot9tzJ_Uu4iCoJm72bssw5JNjgCzuDbdgYyE";
-      const url = `https://docs.google.com/forms/d/${formId}/viewform`;
-      window.open(url, "_blank", "noopener");
+    feedbackBtn.addEventListener("click", (ev) => { ev.preventDefault(); fbOpen(); });
+    fbText.addEventListener("input", fbUpdate);
+    fbCancel.addEventListener("click", fbClose);
+    fbOverlay.addEventListener("click", (ev) => { if (ev.target === fbOverlay) fbClose(); });
+    document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") fbClose(); });
+    fbSend.addEventListener("click", () => {
+      const msg = fbText.value.trim().replace(/\s+/g, " ").slice(0, 280);
+      if (msg.length < 5) return;
+      if (Date.now() - fbLastSent < 10000) { fbStatus.textContent = "Vent litt før du sender en ny."; return; }
+      let ok = false;
+      try {
+        if (window.goatcounter && typeof window.goatcounter.count === "function") {
+          window.goatcounter.count({ path: "forslag/" + msg, title: msg, event: true });
+          ok = true;
+        }
+      } catch (err) { ok = false; }
+      if (ok) {
+        fbLastSent = Date.now();
+        fbStatus.textContent = "Takk! Forslaget er sendt.";
+        fbText.value = "";
+        fbUpdate();
+      } else {
+        fbStatus.textContent = "Kunne ikke sende (statistikktjenesten er blokkert på denne maskinen).";
+      }
     });
+    fbUpdate();
   }
 
   // Search queries are logged locally for the developer's own review
