@@ -8,7 +8,7 @@
 // (i.e. when offline). This avoids the "old cached version stays until you
 // reopen twice" problem, while still allowing offline use.
 
-const CACHE_VERSION = "v29";
+const CACHE_VERSION = "v30";
 const CACHE_NAME = "karma-kode-" + CACHE_VERSION;
 
 const ASSETS = [
