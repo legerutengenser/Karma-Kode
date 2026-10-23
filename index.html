@@ -1238,18 +1238,22 @@ footer.note {
     // only the drug words typed so far (anticipation while typing)
     if (isAnticipatoryPrefix(collapsed, "medikamentavgivende", 6) ||
         isAnticipatoryPrefix(collapsed, "drugeluding", 4) ||
-        isAnticipatoryPrefix(collapsed, "drugeluting", 4)) {
+        isAnticipatoryPrefix(collapsed, "drugeluting", 4) ||
+        isAnticipatoryPrefix(collapsed, "coated", 4)) {
       return { kind: null, rest: "" };
     }
     let found = false, kind = null;
     let rest = n
       .replace(/\bdrug[\s-]?elu[dt]ing\b/g, () => { found = true; return " "; })
+      .replace(/\bdrug[\s-]?coat(?:ed|ing)\b/g, () => { found = true; return " "; })
+      .replace(/\bcoated\b/g, () => { found = true; return " "; })
       .replace(/\bmedikament\w*/g, () => { found = true; return " "; })
       .replace(/\bdeb\b/g, () => { found = true; kind = "pta"; return " "; })
       .replace(/\bdes\b/g, () => { found = true; kind = "stent"; return " "; });
     if (!found) return null;
     if (!kind && /\bpta\b/.test(rest)) { kind = "pta"; rest = rest.replace(/\bpta\b/g, " "); }
     if (!kind && /\bstent\b/.test(rest)) { kind = "stent"; rest = rest.replace(/\bstent\b/g, " "); }
+    if (!kind && /\b(?:ballong\w*|balloon)\b/.test(rest)) { kind = "pta"; rest = rest.replace(/\b(?:ballong\w*|balloon)\b/g, " "); }
     return { kind, rest: rest.replace(/\s+/g, " ").trim() };
   }
 
