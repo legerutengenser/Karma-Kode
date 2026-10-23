@@ -842,6 +842,7 @@ footer.note {
     // AFS = a. femoralis superficialis
     { pattern: /\bafs\b/i, expand: ["femoralis superficialis"], strong2: "femoralis superficialis" },
     // Arterial abbreviations
+    { pattern: /\bgraft\b/i, expand: ["bypass"] },
     { pattern: /\bafc\b/i, expand: ["femoralis communis"], strong2: "femoralis communis" },
     { pattern: /\b(ams|sma)\b/i, expand: ["mesenterica superior"], strong2: "mesenterica superior" },
     { pattern: /\b(ami|ima)\b/i, expand: ["mesenterica inferior"], strong2: "mesenterica inferior" },
@@ -852,6 +853,11 @@ footer.note {
     { pattern: /\b(coiling|coil|plugging|plugg\w*)\b/i, expand: ["perkutan okklusjon"] },
     { pattern: /\btea\b/i, expand: ["trombendarterektomi"], strong: true },
     { pattern: /\bbekken\w*/i, expand: ["iliaca", "iliacal"] },
+    // EVAR explantation / conversion to open repair: removal of the stentgraft
+    // (PDU85, or PDU88 if the whole graft is excised), then open Y-graft
+    // (PDG21; PDG24 if to the groins) or tube graft (PDG10).
+    { pattern: /\b(?:konverter\w*|e[kx]splant\w*)/i, strict: true,
+      kodes: ["PDU85", "PDU88", "PDG21", "PDG10", "PDG24"] },
     { pattern: /\bevar\b/i, expand: ["stentgraft", "bukaorta", "iliaca"], kodes: ["PDZ12B", "PDZ15B"] },
     { pattern: /\btevar\b/i, expand: ["stentgraft", "thoraxaorta"] },
     { pattern: /\bvap\b/i, expand: ["implantasjon av vaskulær injeksjonsport", "fjerning av vaskulær injeksjonsport"], kodes: ["PHX30", "PHX35"] },
@@ -860,7 +866,6 @@ footer.note {
     // Hickman incl. misspellings (Hikman, Hickmann, Hikmann): PHX16, PHX21, PHX26 in that order
     { pattern: /\bhi(?:ck|k)man{1,2}\b/i, expand: ["innlegging av tunnelert venekateter"], kodes: ["PHX16", "PHX21", "PHX26"] },
     { pattern: /\biliac\s*branch\b/i, expand: ["stentgraft", "iliaca"], kodes: ["PDZ15B", "PDZ31B"] },
-    { pattern: /\beksplantasjon\w*/i, expand: ["fjerning av stent fra bypass"], kodes: ["PDU85"] },
     { pattern: /\breop\w*/i, expand: ["reoperasjon"] },
     { pattern: /\bcarotis\w*/i, expand: ["carotis"] },
     { pattern: /\bav.?fistel\b/i, expand: ["arteriovenøs fistel", "fistel"] },
@@ -982,9 +987,16 @@ footer.note {
     { full: "hickmann", minLen: 4, strict: true, kodes: ["PHX16", "PHX21", "PHX26"] },
     { full: "hikman", minLen: 4, strict: true, kodes: ["PHX16", "PHX21", "PHX26"] },
     { full: "hikmann", minLen: 4, strict: true, kodes: ["PHX16", "PHX21", "PHX26"] },
+    // EVAR explantation / conversion (anticipation). minLen 6 for eksplantasjon so
+    // "ekspl..." (eksplorasjon) is not caught before the letter after "ekspl".
+    { full: "eksplantasjon", minLen: 6, strict: true, kodes: ["PDU85", "PDU88", "PDG21", "PDG10", "PDG24"] },
+    { full: "explantasjon", minLen: 6, strict: true, kodes: ["PDU85", "PDU88", "PDG21", "PDG10", "PDG24"] },
+    { full: "konvertering", minLen: 4, strict: true, kodes: ["PDU85", "PDU88", "PDG21", "PDG10", "PDG24"] },
     // "emb.." anticipates embolektomi (not embolisering): codes whose text
     // contains "embolektomi" get a score bonus while the query is a prefix of it.
-    { full: "embolektomi", minLen: 3, textBonus: "embolektomi" },
+    // Graft embolectomy (occluded bypass) is common: these codes get an extra bonus.
+    { full: "embolektomi", minLen: 3, textBonus: "embolektomi",
+      bonusKodes: ["PDU74", "PEU74", "PFU74", "PGU74", "PAU74", "PCU74", "PFE20B"] },
     // Vakuumassistert sårbehandling: "vakuum"/"vacuum" (anticipated from
     // "vak"/"vac") shows WLGX20 first.
     { full: "vakuum", minLen: 3, kodes: ["WLGX20"] },
@@ -1172,6 +1184,7 @@ footer.note {
     let forceTextContains = null;
     let forceStep = 10; // 100 = strict order (frequency cannot reorder)
     let textBonus = null; // phrase whose entries get a score bonus
+    let bonusKodes = null; // codes that get an extra bonus
 
     // Short-prefix anticipation: "p" or "pt" -> anticipate "PTA"
     const qTrim = query.trim().toLowerCase();
@@ -1183,7 +1196,7 @@ footer.note {
         for (const e of (syn.expand || [])) terms.push(e);
         if (syn.strong) strongPhrase = "trombendarterektomi";
         if (syn.strong2) strongPhrase = syn.strong2;
-        if (syn.kodes) forceKodes = (forceKodes || []).concat(syn.kodes);
+        if (syn.kodes) { forceKodes = (forceKodes || []).concat(syn.kodes); if (syn.strict) forceStep = 100; }
       }
     }
 
@@ -1214,12 +1227,13 @@ footer.note {
           if (rule.kodes) { forceKodes = rule.kodes; forceStep = rule.strict ? 100 : 10; }
           if (rule.textContains) forceTextContains = rule.textContains;
           if (rule.textBonus) textBonus = rule.textBonus;
+          if (rule.bonusKodes) bonusKodes = rule.bonusKodes;
           break;
         }
       }
     }
 
-    return { terms, strongPhrase, splitWords, forceKodes, forceTextContains, forceStep, textBonus };
+    return { terms, strongPhrase, splitWords, forceKodes, forceTextContains, forceStep, textBonus, bonusKodes };
   }
 
   // ---------------------------------------------------------------------
@@ -1350,7 +1364,7 @@ footer.note {
     const q = query.trim();
     if (!q) return [];
 
-    const { terms, strongPhrase, splitWords, forceKodes, forceTextContains, forceStep, textBonus } = buildSearchTerms(q);
+    const { terms, strongPhrase, splitWords, forceKodes, forceTextContains, forceStep, textBonus, bonusKodes } = buildSearchTerms(q);
     const stentgraftOnly = norm(q).includes("stentgraft");
 
     // Multi-word AND matching: if the query consists of 2+ significant words
@@ -1477,6 +1491,7 @@ footer.note {
       let score = best;
 
       if (textBonus && norm(entry.tekst).includes(norm(textBonus))) score += 40;
+      if (bonusKodes && bonusKodes.includes(entry.kode)) score += 8;
 
       // extra bonus for matching all words of a multi-word query
       if (allWordsMatch) score += 15;
