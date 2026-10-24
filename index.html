@@ -990,17 +990,24 @@ footer.note {
     { full: "skum", minLen: 3,
       kodes: ["PHX10", "PHV10X", "PHV99X", "PHV12X", "PHD99", "PHV11X", "PHV13X", "PHV14X"] },
     { full: "endovenos", minLen: 3,
-      kodes: ["PHV10X", "PHV99X", "PHV12X", "PHD99", "PHX10", "PHV11X", "PHV13X", "PHV14X"] },
+      kodes: ["PHV10X", "PHV11X", "PHV12X", "PHV13X", "PHV14X", "PHV99X", "PHD99", "PHX10"] },
     { full: "ablasjon", minLen: 3,
       kodes: ["PHV10X", "PHV99X", "PHV12X", "PHD99", "PHX10", "PHV11X", "PHV13X", "PHV14X"] },
     { full: "varicer", minLen: 3,
       kodes: ["PHV10X", "PHV99X", "PHV12X", "PHD99", "PHX10", "PHV11X", "PHV13X", "PHV14X"] },
     { full: "areknuter", minLen: 3,
       kodes: ["PHV10X", "PHV99X", "PHV12X", "PHD99", "PHX10", "PHV11X", "PHV13X", "PHV14X"] },
+    // Laser / radiofrekvens / obliterasjon: the six endovenous obliteration codes in code order
+    { full: "laser", minLen: 3,
+      kodes: ["PHV10X", "PHV11X", "PHV12X", "PHV13X", "PHV14X", "PHV99X", "PHD99", "PHX10"] },
+    { full: "obliterasjon", minLen: 4,
+      kodes: ["PHV10X", "PHV11X", "PHV12X", "PHV13X", "PHV14X", "PHV99X", "PHD99", "PHX10"] },
+    { full: "radiofrekvens", minLen: 5,
+      kodes: ["PHV10X", "PHV11X", "PHV12X", "PHV13X", "PHV14X", "PHV99X", "PHD99", "PHX10"] },
     // Radiofrekvensablasjon = same endovenous set as "ablasjon". Anticipated
     // from "radio" (5 chars) so "radialis"/"radi.." is not caught.
     { full: "radiofrekvensablasjon", minLen: 5,
-      kodes: ["PHV10X", "PHV99X", "PHV12X", "PHD99", "PHX10", "PHV11X", "PHV13X", "PHV14X"] },
+      kodes: ["PHV10X", "PHV11X", "PHV12X", "PHV13X", "PHV14X", "PHV99X", "PHD99", "PHX10"] },
     // Hickman anticipation (from 4 chars) incl. misspellings
     { full: "hickman", minLen: 4, strict: true, kodes: ["PHX16", "PHX21", "PHX26"] },
     { full: "hickmann", minLen: 4, strict: true, kodes: ["PHX16", "PHX21", "PHX26"] },
@@ -1688,6 +1695,13 @@ footer.note {
     if (btn && !alreadyBoosted) {
       btn.addEventListener("click", () => {
         recordBoost(query, entry.kode);
+        // Anonymous signal so the owner can review which search -> code pairs users confirm
+        try {
+          const qq = query.trim().toLowerCase().slice(0, 60);
+          if (window.goatcounter && typeof window.goatcounter.count === "function") {
+            window.goatcounter.count({ path: "valgt/" + qq + " -> " + entry.kode, title: qq + " -> " + entry.kode, event: true });
+          }
+        } catch (e) {}
         renderDetail(entry, query);
         renderResults(query);
       });
