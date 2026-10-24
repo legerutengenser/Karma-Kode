@@ -1678,6 +1678,13 @@ footer.note {
     revealInTree(kode);
   }
 
+  // Hide the "Dette var det jeg søkte etter" box when clicking anywhere else.
+  // Capture phase: runs before a result-row click re-renders a fresh box.
+  document.addEventListener("click", (ev) => {
+    const box = detailEl.querySelector(".boost-action");
+    if (box && !box.contains(ev.target)) box.remove();
+  }, true);
+
   function renderDetail(entry, query) {
     const alreadyBoosted = getBoostForQuery(query, entry.kode) > 0;
     detailEl.innerHTML = `<div class="detail-box">
@@ -1831,6 +1838,7 @@ footer.note {
 
   let searchLogTimer = null;
   input.addEventListener("input", (e) => {
+    detailEl.innerHTML = ""; // a new search clears the old detail box
     currentQuery = e.target.value;
     selectedKode = null;
     shownLimit = PAGE_SIZE;
