@@ -735,7 +735,7 @@ footer.note {
   // works offline since it's all baked into the code. Add more quotes to
   // this list over time.
   // ---------------------------------------------------------------------
-  const QUOTES = [
+  const QUOTES_BUILTIN = [
     { text: "And if I have to intervene, I inject a bit of ...white stuff", author: "Amateur Transplants" },
     { text: "The proof that love´s not only blind, but deaf", author: "Arctic Monkeys" },
     { text: "Emancipate yourself from mental slavery", author: "Bob Marley" },
@@ -799,6 +799,42 @@ footer.note {
     { text: "I´m not a trendy asshole, I do what I want, I do what I feel like", author: "The Offspring" },
    
   ];
+
+  // Felles sitatliste: hentes fra repoet Karma-Sitater (maks én gang per døgn)
+  // og lagres i nettleseren. Listen over er den innebygde reservekopien som
+  // brukes hvis ingenting er hentet ennå, eller hvis hentingen/filen er ugyldig.
+  const QUOTES_URL = "https://legerutengenser.github.io/karma-sitater/quotes.json";
+  const QUOTES_STORE_KEY = "karkode_quotes_remote_v1";
+  const QUOTES_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+  function validQuotes(list) {
+    return Array.isArray(list) && list.length > 0 && list.every(q =>
+      q && typeof q.text === "string" && q.text.trim() &&
+      typeof q.author === "string" && q.author.trim());
+  }
+
+  let QUOTES = QUOTES_BUILTIN;
+  let quotesFetchedAt = 0;
+  try {
+    const stored = JSON.parse(localStorage.getItem(QUOTES_STORE_KEY) || "null");
+    if (stored && validQuotes(stored.list)) {
+      QUOTES = stored.list;
+      quotesFetchedAt = stored.fetchedAt || 0;
+    }
+  } catch (e) {}
+
+  if (Date.now() - quotesFetchedAt > QUOTES_MAX_AGE_MS) {
+    // Background refresh; new list is used from the next page load.
+    fetch(QUOTES_URL, { cache: "no-cache" })
+      .then(r => (r.ok ? r.json() : Promise.reject()))
+      .then(list => {
+        if (!validQuotes(list)) return;
+        try {
+          localStorage.setItem(QUOTES_STORE_KEY, JSON.stringify({ fetchedAt: Date.now(), list }));
+        } catch (e) {}
+      })
+      .catch(() => {});
+  }
 
   // Sitatrotasjon: velger et nytt sitat hver gang siden lastes (f.eks. ved
   // oppdatering av nettleseren), i stedet for å låse samme sitat gjennom
